@@ -63,22 +63,22 @@ dependencies:
 flutter_native_splash:
   color: "#FFFFFF"
   color_dark: "#111B21"
-  image: assets/images/vinyl-record.png
-  image_dark: assets/images/vinyl-record.png
+  image: assets/images/splash_light.png
+  image_dark: assets/images/splash_black.png
   android_12:
     color: "#FFFFFF"
     color_dark: "#111B21"
-    image: assets/images/vinyl-record.png
-    image_dark: assets/images/vinyl-record.png
+    image: assets/images/splash_light.png
+    image_dark: assets/images/splash_black.png
     icon_background_color: "#FFFFFF"
     icon_background_color_dark: "#111B21"
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/icons/vinyl.png"
+  image_path: "assets/icons/vinyl-record.png"
   adaptive_icon_background: "#0D0D0D"
-  adaptive_icon_foreground: "assets/icons/vinyl_fg.png"
+  adaptive_icon_foreground: "assets/icons/vinyl-record.png"
 
 dev_dependencies:
   flutter_test:

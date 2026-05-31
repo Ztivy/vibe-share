@@ -29,12 +29,17 @@ class AuthGoogle {
           await _auth.signInWithCredential(credential);
       return result.user;
     } catch (e) {
+      // TODO: reemplazar con logger en producción
+      // ignore: avoid_print
       print('Error Google Sign-In: $e');
       return null;
     }
   }
 
   Future<void> signOut() async {
-    await _auth.signOut();
+    await Future.wait([
+      _auth.signOut(),
+      _googleSignIn.signOut(),
+    ]);
   }
 }

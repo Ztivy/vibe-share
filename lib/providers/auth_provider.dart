@@ -108,4 +108,21 @@ class AuthProvider extends ChangeNotifier {
     isDarkMode = !isDarkMode;
     notifyListeners();
   }
+
+  // ── Refrescar usuario desde Firestore ────────────────────────────────────
+
+Future<void> refrescarUsuario() async {
+  if (usuarioActual == null) return;
+  final doc = await _usuariosFirestore.getUsuario(usuarioActual!.uid);
+  if (doc != null) {
+    usuarioActual = doc;
+    notifyListeners();
+  }
+}
+
+// ── Obtener usuario por UID (para tiles de solicitudes) ──────────────────
+
+Future<UsuarioModel?> getUsuarioPorUid(String uid) async {
+  return await _usuariosFirestore.getUsuario(uid);
+}
 }

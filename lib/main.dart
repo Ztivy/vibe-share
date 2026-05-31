@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:vibe_share/firebase_options.dart';
+import 'package:vibe_share/providers/amigos_provider.dart';
 import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/providers/publicaciones_provider.dart';
 import 'package:vibe_share/screens/dashboard_screen.dart';
@@ -54,6 +55,7 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => PublicacionesProvider()),
+        ChangeNotifierProvider(create: (_) => AmigosProvider()),
       ],
       child: Consumer<AuthProvider>(
         builder: (context, auth, _) {

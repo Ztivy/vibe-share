@@ -5,6 +5,7 @@ import 'package:vibe_share/screens/nueva_publicacion_screen.dart';
 import 'package:vibe_share/screens/perfil_screen.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/screens/amigos_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -20,7 +21,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     FeedScreen(),
     _DiscoverPlaceholder(),
     NuevaPublicacionScreen(),
-    _FriendsPlaceholder(),
+    const AmigosScreen(),
     PerfilScreen(),
   ];
 

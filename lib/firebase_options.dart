@@ -59,4 +59,5 @@ class DefaultFirebaseOptions {
     projectId: 'vibeshare-ba9ce',
     storageBucket: 'vibeshare-ba9ce.firebasestorage.app',
   );
+
 }

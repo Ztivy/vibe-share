@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +7,8 @@ import 'package:vibe_share/models/usuario_model.dart';
 import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/providers/publicaciones_provider.dart';
+import 'package:vibe_share/models/publicacion_model.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -73,9 +74,15 @@ class _PerfilView extends StatelessWidget {
           const Divider(height: ThemeApp.spacingXl),
 
           // ── Premium badge ─────────────────────────────────────────────
-          if (user.esPremium) const _PremiumBadge(),
+          if (user.esPremium) ...[
+          const _PremiumBadge(),
+          const Divider(height: ThemeApp.spacingXl),
+          ],
 
-          const SizedBox(height: ThemeApp.spacingXl),
+// ── Publicaciones del usuario ─────────────────────────────────────────────
+        _PublicacionesSection(uid: user.uid),
+
+        const SizedBox(height: ThemeApp.spacingXl),
 
           // ── Logout ────────────────────────────────────────────────────
           Padding(
@@ -275,26 +282,36 @@ class _StatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.read<PublicacionesProvider>();
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: ThemeApp.spacingXl),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _StatItem(
-            label: StringsApp.profileFriends,
-            value: '${user.amigos.length}',
-          ),
-          _divider(),
-          _StatItem(
-            label: StringsApp.profilePosts,
-            value: '—',
-          ),
-          _divider(),
-          _StatItem(
-            label: StringsApp.profileGenres,
-            value: '${user.generosInteres.length}',
-          ),
-        ],
+      child: StreamBuilder<List<PublicacionModel>>(
+        stream: provider.publicacionesDeUsuario(user.uid),
+        builder: (context, snap) {
+          final count = snap.data?.length ?? 0;
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              _StatItem(
+                label: StringsApp.profileFriends,
+                value: '${user.amigos.length}',
+              ),
+              _divider(),
+              _StatItem(
+                label: StringsApp.profilePosts,
+                value: snap.connectionState == ConnectionState.waiting
+                    ? '…'
+                    : '$count',
+              ),
+              _divider(),
+              _StatItem(
+                label: StringsApp.profileGenres,
+                value: '${user.generosInteres.length}',
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -609,6 +626,275 @@ class _PremiumBadge extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+// ── _PublicacionesSection ─────────────────────────────────────────────────
+
+class _PublicacionesSection extends StatelessWidget {
+  final String uid;
+  const _PublicacionesSection({required this.uid});
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.read<PublicacionesProvider>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return StreamBuilder<List<PublicacionModel>>(
+      stream: provider.publicacionesDeUsuario(uid),
+      builder: (context, snap) {
+        final publicaciones = snap.data ?? [];
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: ThemeApp.spacingMd),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Encabezado
+              Padding(
+                padding: const EdgeInsets.only(
+                  left: ThemeApp.spacingSm,
+                  bottom: ThemeApp.spacingMd,
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      StringsApp.profilePosts,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(width: ThemeApp.spacingSm),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ThemeApp.spacingSm,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.12),
+                        borderRadius:
+                            BorderRadius.circular(ThemeApp.radiusFull),
+                      ),
+                      child: Text(
+                        '${publicaciones.length}',
+                        style: AppTextStyles.labelSmall.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Estado cargando
+              if (snap.connectionState == ConnectionState.waiting)
+                const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(ThemeApp.spacingLg),
+                    child: CircularProgressIndicator(),
+                  ),
+                )
+
+              // Sin publicaciones
+              else if (publicaciones.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: ThemeApp.spacingLg,
+                    ),
+                    child: Column(
+                      children: [
+                        Icon(
+                          Icons.music_note_outlined,
+                          size: 48,
+                          color: AppColors.textHint.withOpacity(0.5),
+                        ),
+                        const SizedBox(height: ThemeApp.spacingSm),
+                        Text(
+                          'Aún no has publicado nada.\n¡Comparte tu primera canción!',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+
+              // Lista de tarjetas
+              else
+                ...publicaciones.map(
+                  (p) => _MiniPublicacionCard(
+                    publicacion: p,
+                    isDark: isDark,
+                  ),
+                ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── _MiniPublicacionCard ──────────────────────────────────────────────────────
+
+class _MiniPublicacionCard extends StatelessWidget {
+  final PublicacionModel publicacion;
+  final bool isDark;
+
+  const _MiniPublicacionCard({
+    required this.publicacion,
+    required this.isDark,
+  });
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inMinutes < 1) return 'ahora';
+    if (diff.inMinutes < 60) return 'hace ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'hace ${diff.inHours} h';
+    if (diff.inDays < 7) return 'hace ${diff.inDays} d';
+    return '${dt.day}/${dt.month}/${dt.year}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
+      padding: const EdgeInsets.all(ThemeApp.spacingMd),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.border,
+        ),
+      ),
+      child: Row(
+        children: [
+          // Album cover o ícono
+          ClipRRect(
+            borderRadius: BorderRadius.circular(ThemeApp.spacingSm),
+            child: publicacion.albumCover != null &&
+                    publicacion.albumCover!.isNotEmpty
+                ? Image.network(
+                    publicacion.albumCover!,
+                    width: 52,
+                    height: 52,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _MusicIcon(),
+                  )
+                : _MusicIcon(),
+          ),
+
+          const SizedBox(width: ThemeApp.spacingMd),
+
+          // Info canción
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  publicacion.cancion,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  publicacion.artista,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                // Descripción si existe
+                if (publicacion.descripcion.isNotEmpty)
+                  Text(
+                    publicacion.descripcion,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontStyle: FontStyle.italic,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+
+          const SizedBox(width: ThemeApp.spacingSm),
+
+          // Stats: likes + fecha
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // Likes
+              Row(
+                children: [
+                  const Icon(
+                    Icons.favorite_rounded,
+                    size: 14,
+                    color: AppColors.accent,
+                  ),
+                  const SizedBox(width: 3),
+                  Text(
+                    '${publicacion.likesCount}',
+                    style: AppTextStyles.labelSmall.copyWith(
+                      color: AppColors.accent,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              // Género chip mini
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 6,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
+                ),
+                child: Text(
+                  publicacion.genero,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: AppColors.primary,
+                    fontSize: 10,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              // Fecha
+              Text(
+                _timeAgo(publicacion.creadoEn),
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 10,
+                    ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MusicIcon extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [AppColors.primary, Color(0xFF9B8FFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(ThemeApp.spacingSm),
+      ),
+      child: const Icon(
+        Icons.music_note_rounded,
+        color: Colors.white,
+        size: 26,
       ),
     );
   }

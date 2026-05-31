@@ -15,6 +15,7 @@ class PublicacionModel {
   final int comentariosCount;
   final bool esPremium;
   final DateTime creadoEn;
+  final String? albumCover;
 
   const PublicacionModel({
     required this.id,
@@ -31,6 +32,7 @@ class PublicacionModel {
     this.comentariosCount = 0,
     this.esPremium = false,
     required this.creadoEn,
+    this.albumCover
   });
 
   bool get tieneMedia => mediaUrl != null && mediaUrl!.isNotEmpty;
@@ -58,6 +60,7 @@ class PublicacionModel {
       creadoEn: data['creadoEn'] != null
           ? DateTime.parse(data['creadoEn'].toString())
           : DateTime.now(),
+      albumCover: data['albumCover'] as String?,
     );
   }
 
@@ -76,6 +79,7 @@ class PublicacionModel {
       'comentariosCount': comentariosCount,
       'esPremium': esPremium,
       'creadoEn': creadoEn.toIso8601String(),
+      'albumCover': albumCover,
     };
   }
 
@@ -94,6 +98,7 @@ class PublicacionModel {
     int? comentariosCount,
     bool? esPremium,
     DateTime? creadoEn,
+    String? albumCover,
   }) {
     return PublicacionModel(
       id: id ?? this.id,
@@ -110,6 +115,7 @@ class PublicacionModel {
       comentariosCount: comentariosCount ?? this.comentariosCount,
       esPremium: esPremium ?? this.esPremium,
       creadoEn: creadoEn ?? this.creadoEn,
+      albumCover: albumCover ?? this.albumCover,
     );
   }
 

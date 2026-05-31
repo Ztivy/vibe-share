@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "173763559487-5l0vn4om3v6dgcsqo59fnnlc40s5l20d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vibe_share",
+            "certificate_hash": "9b7e73ccf51a50a214ccaac3b3a0333fc4a8f12f"
+          }
+        },
+        {
           "client_id": "173763559487-jbrqco7uip74gqq2rt34h478vrta44ht.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

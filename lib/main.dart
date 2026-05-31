@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
   Widget _resolveHome(AuthProvider auth) {
     if (auth.isAuthenticated) return const DashboardScreen();
     if (!onboardingDone) return const OnboardingScreen();
-    //return const LoginScreen();
-    return const DashboardScreen();
+    return const LoginScreen();
+    //return const DashboardScreen();
   }
 }

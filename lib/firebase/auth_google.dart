@@ -11,6 +11,10 @@ class AuthGoogle {
 
   Future<User?> signInWithGoogle() async {
     try {
+      await _googleSignIn.initialize(
+        serverClientId: '173763559487-ta681nuges1bgo0q2f6jq70086jrur9m.apps.googleusercontent.com',
+      );
+
       final GoogleSignInAccount googleUser =
           await _googleSignIn.authenticate();
 
@@ -29,7 +33,6 @@ class AuthGoogle {
           await _auth.signInWithCredential(credential);
       return result.user;
     } catch (e) {
-      // TODO: reemplazar con logger en producción
       // ignore: avoid_print
       print('Error Google Sign-In: $e');
       return null;

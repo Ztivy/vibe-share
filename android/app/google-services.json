@@ -12,7 +12,20 @@
           "package_name": "com.example.vibe_share"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "173763559487-jbrqco7uip74gqq2rt34h478vrta44ht.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.vibe_share",
+            "certificate_hash": "4370cff421e6d0175a51c0fa57f83c3ed7f219fb"
+          }
+        },
+        {
+          "client_id": "173763559487-ta681nuges1bgo0q2f6jq70086jrur9m.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBhCT7H7TmUsQlg2gSmbliq71HbY3FzAl0"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "173763559487-ta681nuges1bgo0q2f6jq70086jrur9m.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

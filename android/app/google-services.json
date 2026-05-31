@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "173763559487",
+    "project_id": "vibeshare-ba9ce",
+    "storage_bucket": "vibeshare-ba9ce.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:173763559487:android:54464840a9f642ff0cf88a",
+        "android_client_info": {
+          "package_name": "com.example.vibe_share"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBhCT7H7TmUsQlg2gSmbliq71HbY3FzAl0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -463,7 +463,7 @@ class _AccionBoton extends StatefulWidget {
 
 class _AccionBotonState extends State<_AccionBoton> {
   bool _loading = false;
-  bool _enviada = false; // estado local optimista
+  late bool _enviada;
 
   @override
   void initState() {
@@ -471,134 +471,182 @@ class _AccionBotonState extends State<_AccionBoton> {
     _enviada = widget.enviada;
   }
 
-  Future<void> _accion() async {
+  Future<void> _enviar() async {
     if (_loading) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _enviada = true;
+    });
 
     final provider = context.read<AmigosProvider>();
     final auth = context.read<AuthProvider>();
     final miNombre = auth.usuarioActual?.nombre ?? '';
     final miAvatar = auth.usuarioActual?.avatarUrl ?? '';
 
-    bool ok = false;
-    if (widget.recibida) {
-      ok = await provider.aceptarSolicitud(
-        widget.miUid,
-        widget.destinoUid,
-        miNombre: miNombre,
-        miAvatar: miAvatar,
-      );
-    } else if (!_enviada && !widget.esAmigo) {
-      // Actualización optimista: mostrar "Pendiente" inmediatamente
-      setState(() => _enviada = true);
-      ok = await provider.enviarSolicitud(
-        widget.miUid,
-        widget.destinoUid,
-        miNombre: miNombre,
-        miAvatar: miAvatar,
-      );
-      if (!ok) {
-        // Revertir si falló
-        setState(() => _enviada = false);
-      }
-    }
+    final ok = await provider.enviarSolicitud(
+      widget.miUid,
+      widget.destinoUid,
+      miNombre: miNombre,
+      miAvatar: miAvatar,
+    );
 
-    if (ok) {
-      auth.refrescarUsuario();
-    }
+    if (!ok) setState(() => _enviada = false);
+    if (ok) auth.refrescarUsuario();
+    if (mounted) setState(() => _loading = false);
+  }
 
+  Future<void> _cancelar() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _enviada = false;
+    });
+
+    final ok = await context
+        .read<AmigosProvider>()
+        .cancelarSolicitud(widget.miUid, widget.destinoUid);
+
+    if (!ok) setState(() => _enviada = true);
+    if (ok) context.read<AuthProvider>().refrescarUsuario();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _aceptar() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    final auth = context.read<AuthProvider>();
+    final miNombre = auth.usuarioActual?.nombre ?? '';
+    final miAvatar = auth.usuarioActual?.avatarUrl ?? '';
+
+    final ok = await context.read<AmigosProvider>().aceptarSolicitud(
+          widget.miUid,
+          widget.destinoUid,
+          miNombre: miNombre,
+          miAvatar: miAvatar,
+        );
+
+    if (ok) auth.refrescarUsuario();
     if (mounted) setState(() => _loading = false);
   }
 
   @override
   Widget build(BuildContext context) {
-    // Usar _enviada (local) en lugar de widget.enviada
-    final estaEnviada = _enviada || widget.enviada;
+    if (_loading) {
+      return const SizedBox(
+        width: 20,
+        height: 20,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
 
     if (widget.esAmigo) {
-      return Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: ThemeApp.spacingMd,
-          vertical: ThemeApp.spacingSm,
+      return _StatusChip(
+        icon: Icons.check_rounded,
+        label: 'Amigos',
+        color: AppColors.success,
+      );
+    }
+
+    if (widget.recibida) {
+      return ElevatedButton(
+        onPressed: _aceptar,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.success,
+          padding: const EdgeInsets.symmetric(
+            horizontal: ThemeApp.spacingMd,
+            vertical: ThemeApp.spacingSm,
+          ),
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
-        decoration: BoxDecoration(
-          color: AppColors.success.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.check_rounded, size: 16, color: AppColors.success),
-            const SizedBox(width: 4),
-            Text(
-              'Amigos',
-              style: AppTextStyles.labelSmall.copyWith(color: AppColors.success),
-            ),
-          ],
+        child: Text(
+          StringsApp.friendsAccept,
+          style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
         ),
       );
     }
 
+    final estaEnviada = _enviada || widget.enviada;
     if (estaEnviada) {
-      return Container(
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _StatusChip(
+            icon: Icons.schedule_rounded,
+            label: StringsApp.friendsPending,
+            color: AppColors.textHint,
+          ),
+          const SizedBox(width: ThemeApp.spacingXs),
+          GestureDetector(
+            onTap: _cancelar,
+            child: Container(
+              padding: const EdgeInsets.all(ThemeApp.spacingXs),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.close_rounded,
+                size: 14,
+                color: AppColors.error,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ElevatedButton(
+      onPressed: _enviar,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
         padding: const EdgeInsets.symmetric(
           horizontal: ThemeApp.spacingMd,
           vertical: ThemeApp.spacingSm,
         ),
-        decoration: BoxDecoration(
-          color: AppColors.textHint.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_loading)
-              const SizedBox(
-                width: 12,
-                height: 12,
-                child: CircularProgressIndicator(
-                  strokeWidth: 1.5,
-                  color: AppColors.textHint,
-                ),
-              )
-            else
-              const Icon(Icons.schedule_rounded,
-                  size: 14, color: AppColors.textHint),
-            const SizedBox(width: 4),
-            Text(
-              StringsApp.friendsPending,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textHint,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
+        minimumSize: Size.zero,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      ),
+      child: Text(
+        StringsApp.friendsAdd,
+        style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
+      ),
+    );
+  }
+}
 
-    return _loading
-        ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : ElevatedButton(
-            onPressed: _accion,
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  widget.recibida ? AppColors.success : AppColors.primary,
-              padding: const EdgeInsets.symmetric(
-                horizontal: ThemeApp.spacingMd,
-                vertical: ThemeApp.spacingSm,
-              ),
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: Text(
-              widget.recibida ? StringsApp.friendsAccept : StringsApp.friendsAdd,
-              style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
-            ),
-          );
+class _StatusChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  const _StatusChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: ThemeApp.spacingMd,
+        vertical: ThemeApp.spacingSm,
+      ),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 4),
+          Text(label, style: AppTextStyles.labelSmall.copyWith(color: color)),
+        ],
+      ),
+    );
   }
 }
 

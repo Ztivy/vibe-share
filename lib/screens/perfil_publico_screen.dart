@@ -363,32 +363,69 @@ class _BotonAccionState extends State<_BotonAccion> {
     _enviada = widget.enviada;
   }
 
-  Future<void> _accion() async {
+  Future<void> _enviar() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _enviada = true;
+    });
+
+    final auth = context.read<AuthProvider>();
+    final yo = auth.usuarioActual!;
+    final ok = await context.read<AmigosProvider>().enviarSolicitud(
+          yo.uid,
+          widget.usuario.uid,
+          miNombre: yo.nombre,
+          miAvatar: yo.avatarUrl,
+        );
+
+    if (!ok) setState(() => _enviada = false);
+    if (ok) auth.refrescarUsuario();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _cancelar() async {
+    if (_loading) return;
+    setState(() {
+      _loading = true;
+      _enviada = false;
+    });
+
+    final auth = context.read<AuthProvider>();
+    final ok = await context
+        .read<AmigosProvider>()
+        .cancelarSolicitud(auth.usuarioActual!.uid, widget.usuario.uid);
+
+    if (!ok) setState(() => _enviada = true);
+    if (ok) auth.refrescarUsuario();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _aceptar() async {
     if (_loading) return;
     setState(() => _loading = true);
 
-    final provider = context.read<AmigosProvider>();
     final auth = context.read<AuthProvider>();
     final yo = auth.usuarioActual!;
+    final ok = await context.read<AmigosProvider>().aceptarSolicitud(
+          yo.uid,
+          widget.usuario.uid,
+          miNombre: yo.nombre,
+          miAvatar: yo.avatarUrl,
+        );
 
-    bool ok = false;
-    if (widget.recibida) {
-      ok = await provider.aceptarSolicitud(
-        yo.uid,
-        widget.usuario.uid,
-        miNombre: yo.nombre,
-        miAvatar: yo.avatarUrl,
-      );
-    } else if (!_enviada && !widget.esAmigo) {
-      setState(() => _enviada = true);
-      ok = await provider.enviarSolicitud(
-        yo.uid,
-        widget.usuario.uid,
-        miNombre: yo.nombre,
-        miAvatar: yo.avatarUrl,
-      );
-      if (!ok) setState(() => _enviada = false);
-    }
+    if (ok) auth.refrescarUsuario();
+    if (mounted) setState(() => _loading = false);
+  }
+
+  Future<void> _rechazar() async {
+    if (_loading) return;
+    setState(() => _loading = true);
+
+    final auth = context.read<AuthProvider>();
+    final ok = await context
+        .read<AmigosProvider>()
+        .rechazarSolicitud(auth.usuarioActual!.uid, widget.usuario.uid);
 
     if (ok) auth.refrescarUsuario();
     if (mounted) setState(() => _loading = false);
@@ -396,53 +433,93 @@ class _BotonAccionState extends State<_BotonAccion> {
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const SizedBox(
+        width: double.infinity,
+        child: Center(
+          child: Padding(
+            padding: EdgeInsets.symmetric(vertical: ThemeApp.spacingMd),
+            child: CircularProgressIndicator(),
+          ),
+        ),
+      );
+    }
+
     if (widget.esAmigo) {
-      return _chip(
+      return _fullChip(
         icon: Icons.check_rounded,
         label: 'Amigos',
         color: AppColors.success,
       );
     }
 
-    final estaEnviada = _enviada || widget.enviada;
+    if (widget.recibida) {
+      return Row(
+        children: [
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _rechazar,
+              icon: const Icon(Icons.close_rounded, size: 16),
+              label: Text(StringsApp.friendsDecline),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.error,
+                side: const BorderSide(color: AppColors.error),
+              ),
+            ),
+          ),
+          const SizedBox(width: ThemeApp.spacingSm),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: _aceptar,
+              icon: const Icon(Icons.check_rounded, size: 16),
+              label: Text(StringsApp.friendsAccept),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
 
-    if (estaEnviada && !widget.recibida) {
-      return _chip(
-        icon: Icons.schedule_rounded,
-        label: StringsApp.friendsPending,
-        color: AppColors.textHint,
+    if (_enviada) {
+      return Row(
+        children: [
+          Expanded(
+            child: _fullChip(
+              icon: Icons.schedule_rounded,
+              label: StringsApp.friendsPending,
+              color: AppColors.textHint,
+            ),
+          ),
+          const SizedBox(width: ThemeApp.spacingSm),
+          OutlinedButton.icon(
+            onPressed: _cancelar,
+            icon: const Icon(Icons.close_rounded, size: 16),
+            label: const Text('Cancelar'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: const BorderSide(color: AppColors.error),
+            ),
+          ),
+        ],
       );
     }
 
     return SizedBox(
       width: double.infinity,
       child: ElevatedButton.icon(
-        onPressed: _loading ? null : _accion,
-        icon: _loading
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white),
-              )
-            : Icon(
-                widget.recibida
-                    ? Icons.check_rounded
-                    : Icons.person_add_rounded,
-                size: 18,
-              ),
-        label: Text(
-          widget.recibida ? StringsApp.friendsAccept : StringsApp.friendsAdd,
-        ),
+        onPressed: _enviar,
+        icon: const Icon(Icons.person_add_rounded, size: 18),
+        label: Text(StringsApp.friendsAdd),
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              widget.recibida ? AppColors.success : AppColors.primary,
+          backgroundColor: AppColors.primary,
         ),
       ),
     );
   }
 
-  Widget _chip({
+  Widget _fullChip({
     required IconData icon,
     required String label,
     required Color color,

@@ -81,4 +81,9 @@ class AmigosProvider extends ChangeNotifier {
     final ok = await _firestore.rechazarSolicitud(miUid, origenUid);
     return ok;
   }
+
+  Future<bool> cancelarSolicitud(String miUid, String destinoUid) async {
+    final ok = await _firestore.cancelarSolicitud(miUid, destinoUid);
+    return ok;
+  }
 }

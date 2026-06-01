@@ -1,3 +1,4 @@
+// lib/screens/feed_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vibe_share/models/publicacion_model.dart';
@@ -598,9 +599,10 @@ class _MediaPlayer extends StatelessWidget {
       );
     }
 
-    // Audio con reproductor real
+    // Audio con reproductor real — busca URL fresca en Deezer al reproducir
     return AudioPlayerWidget(
-      url: publicacion.mediaUrl!,
+      cancion: publicacion.cancion,
+      artista: publicacion.artista,
       isDark: isDark,
     );
   }

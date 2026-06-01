@@ -1,14 +1,19 @@
+// lib/widgets/audio_player_widget.dart
+
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:vibe_share/network/deezer_api.dart';
 import 'package:vibe_share/utils/theme_app.dart';
 
 class AudioPlayerWidget extends StatefulWidget {
-  final String url;
+  final String cancion;
+  final String artista;
   final bool isDark;
 
   const AudioPlayerWidget({
     super.key,
-    required this.url,
+    required this.cancion,
+    required this.artista,
     required this.isDark,
   });
 
@@ -18,8 +23,11 @@ class AudioPlayerWidget extends StatefulWidget {
 
 class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
   late final AudioPlayer _player;
+  final DeezerApi _deezer = DeezerApi();
+
   bool _loading = false;
   bool _playing = false;
+  bool _error = false;
   Duration _position = Duration.zero;
   Duration _duration = Duration.zero;
 
@@ -66,28 +74,41 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       return;
     }
 
-    // Si nunca se cargó la URL
-    if (_player.processingState == ProcessingState.idle) {
-      setState(() => _loading = true);
-      try {
-        await _player.setUrl(widget.url);
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No se pudo cargar el audio.')),
-          );
-        }
-        setState(() => _loading = false);
-        return;
-      }
-      setState(() => _loading = false);
-    }
+    // Siempre buscar URL fresca en Deezer al presionar play
+    setState(() { _loading = true; _error = false; });
 
-    await _player.play();
+    try {
+      final query = '${widget.artista} ${widget.cancion}';
+      final resultados = await _deezer.buscar(query);
+
+      if (resultados.isEmpty) {
+        throw Exception('No se encontró la canción en Deezer');
+      }
+
+      final previewUrl = resultados.first.previewUrl;
+
+      // Resetear player y cargar URL fresca
+      await _player.stop();
+      await _player.setUrl(previewUrl);
+      await _player.play();
+
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = true);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('No se pudo cargar el preview.'),
+            duration: Duration(seconds: 2),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
-  String _formatDuration(Duration d) {
-    final m = d.inMinutes.remainder(60).toString().padLeft(1, '0');
+  String _fmt(Duration d) {
+    final m = d.inMinutes.remainder(60).toString();
     final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
     return '$m:$s';
   }
@@ -111,7 +132,7 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
       ),
       child: Row(
         children: [
-          // ── Botón play/pause ───────────────────────────────────────────
+          // ── Botón play/pause ──────────────────────────────────────────
           GestureDetector(
             onTap: _togglePlay,
             child: Container(
@@ -128,14 +149,14 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
                   ? const Padding(
                       padding: EdgeInsets.all(16),
                       child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
+                          strokeWidth: 2, color: Colors.white),
                     )
                   : Icon(
-                      _playing
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
+                      _error
+                          ? Icons.refresh_rounded
+                          : _playing
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
                       color: Colors.white,
                       size: 32,
                     ),
@@ -144,43 +165,32 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
           const SizedBox(width: ThemeApp.spacingMd),
 
-          // ── Barra de progreso real ─────────────────────────────────────
+          // ── Barra de progreso ─────────────────────────────────────────
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Preview · Deezer',
-                  style: Theme.of(context).textTheme.bodySmall,
+                  _error
+                      ? 'Error · toca para reintentar'
+                      : 'Preview · Deezer',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: _error ? AppColors.error : null,
+                      ),
                 ),
                 const SizedBox(height: 4),
-                GestureDetector(
-                  // Permite seek al tocar la barra
-                  onTapDown: (details) {
-                    if (_duration == Duration.zero) return;
-                    final box = context.findRenderObject() as RenderBox?;
-                    if (box == null) return;
-                    // Ancho aproximado de la barra (total - botón - paddings)
-                    const barStart = 56.0 + ThemeApp.spacingMd;
-                    const barEnd = ThemeApp.spacingMd + 40.0 + ThemeApp.spacingMd;
-                    final barWidth =
-                        box.size.width - barStart - barEnd;
-                    final tapX = details.localPosition.dx - barStart;
-                    final ratio = (tapX / barWidth).clamp(0.0, 1.0);
-                    final seekTo = _duration * ratio;
-                    _player.seek(seekTo);
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
-                    child: LinearProgressIndicator(
-                      value: progress,
-                      backgroundColor: widget.isDark
-                          ? AppColors.borderDark
-                          : AppColors.border,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.primary),
-                      minHeight: 4,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    backgroundColor: widget.isDark
+                        ? AppColors.borderDark
+                        : AppColors.border,
+                    valueColor: AlwaysStoppedAnimation(
+                      _error ? AppColors.error : AppColors.primary,
                     ),
+                    minHeight: 4,
                   ),
                 ),
               ],
@@ -189,10 +199,10 @@ class _AudioPlayerWidgetState extends State<AudioPlayerWidget> {
 
           const SizedBox(width: ThemeApp.spacingMd),
 
-          // ── Tiempo ─────────────────────────────────────────────────────
+          // ── Tiempo ────────────────────────────────────────────────────
           Text(
             _duration > Duration.zero
-                ? '${_formatDuration(_position)} / ${_formatDuration(_duration)}'
+                ? '${_fmt(_position)} / ${_fmt(_duration)}'
                 : '0:30',
             style: Theme.of(context).textTheme.bodySmall,
           ),

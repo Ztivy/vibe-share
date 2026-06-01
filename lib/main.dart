@@ -14,6 +14,7 @@ import 'package:vibe_share/screens/login_screen.dart';
 import 'package:vibe_share/screens/onboarding_screen.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/firebase/stripe_service.dart';
 
 // ── Supabase — reemplaza con tus credenciales reales ─────────────────────────
 const _supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
@@ -37,6 +38,7 @@ Future<void> main() async {
     url: _supabaseUrl,
     anonKey: _supabaseAnonKey,
   );
+  StripeService.init();
 
   // Leer SharedPreferences para saber si ya se vio el onboarding
   final prefs = await SharedPreferences.getInstance();

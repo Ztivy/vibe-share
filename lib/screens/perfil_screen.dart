@@ -9,6 +9,7 @@ import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
 import 'package:vibe_share/providers/publicaciones_provider.dart';
 import 'package:vibe_share/models/publicacion_model.dart';
+import 'package:vibe_share/screens/premium_screen.dart';
 
 class PerfilScreen extends StatelessWidget {
   const PerfilScreen({super.key});
@@ -77,20 +78,38 @@ class _PerfilView extends StatelessWidget {
 
           // ── Premium badge ─────────────────────────────────────────────
           if (user.esPremium) ...[
-          const _PremiumBadge(),
-          const Divider(height: ThemeApp.spacingXl),
+            const _PremiumBadge(),
+            const Divider(height: ThemeApp.spacingXl),
           ],
 
-// ── Publicaciones del usuario ─────────────────────────────────────────────
-        _PublicacionesSection(uid: user.uid),
+          // ── Publicaciones del usuario ─────────────────────────────────────────────
+          _PublicacionesSection(uid: user.uid),
 
-        const SizedBox(height: ThemeApp.spacingXl),
+          const SizedBox(height: ThemeApp.spacingXl),
+          if (!user.esPremium) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ThemeApp.spacingXl,
+              ),
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.star_rounded),
+                label: const Text('Obtener Premium'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.accentGold,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const PremiumScreen()),
+                ),
+              ),
+            ),
+            const SizedBox(height: ThemeApp.spacingMd),
+          ],
 
           // ── Logout ────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ThemeApp.spacingXl,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: ThemeApp.spacingXl),
             child: OutlinedButton.icon(
               icon: const Icon(Icons.logout_rounded),
               label: Text(StringsApp.profileLogout),
@@ -194,10 +213,7 @@ class _AvatarSectionState extends State<_AvatarSection> {
                 height: 104,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primary,
-                    width: 3,
-                  ),
+                  border: Border.all(color: AppColors.primary, width: 3),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.primary.withOpacity(0.3),
@@ -212,13 +228,12 @@ class _AvatarSectionState extends State<_AvatarSection> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : avatarUrl.isNotEmpty
-                          ? Image.network(
-                              avatarUrl,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) =>
-                                  const _AvatarFallback(),
-                            )
-                          : const _AvatarFallback(),
+                      ? Image.network(
+                          avatarUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const _AvatarFallback(),
+                        )
+                      : const _AvatarFallback(),
                 ),
               ),
 
@@ -318,11 +333,7 @@ class _StatsRow extends StatelessWidget {
     );
   }
 
-  Widget _divider() => Container(
-        height: 36,
-        width: 1,
-        color: AppColors.border,
-      );
+  Widget _divider() => Container(height: 36, width: 1, color: AppColors.border);
 }
 
 class _StatItem extends StatelessWidget {
@@ -336,9 +347,9 @@ class _StatItem extends StatelessWidget {
       children: [
         Text(
           value,
-          style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-                color: AppColors.primary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineLarge?.copyWith(color: AppColors.primary),
         ),
         const SizedBox(height: 2),
         Text(label, style: Theme.of(context).textTheme.bodySmall),
@@ -373,10 +384,11 @@ class _GenerosSectionState extends State<_GenerosSection> {
   Future<void> _guardar() async {
     setState(() => _guardando = true);
     await widget.auth.actualizarPerfil({'generosInteres': _seleccionados});
-    if (mounted) setState(() {
-      _guardando = false;
-      _editando = false;
-    });
+    if (mounted)
+      setState(() {
+        _guardando = false;
+        _editando = false;
+      });
   }
 
   @override
@@ -427,29 +439,29 @@ class _GenerosSectionState extends State<_GenerosSection> {
               if (!_editando && !seleccionado) return const SizedBox.shrink();
 
               return FilterChip(
-  label: Text(genero),
-  selected: seleccionado,
-  // ← Pasar siempre un callback, solo vacío cuando no editamos
-  onSelected: _editando
-      ? (val) {
-          setState(() {
-            if (val) {
-              _seleccionados.add(genero);
-            } else {
-              _seleccionados.remove(genero);
-            }
-          });
-        }
-      : (_) {}, // ← vacío en lugar de null para mantener el color
-  selectedColor: AppColors.primary,
-  labelStyle: TextStyle(
-    color: seleccionado ? Colors.white : null,
-    fontWeight: seleccionado ? FontWeight.w600 : null,
-  ),
-  backgroundColor: Theme.of(context).brightness == Brightness.dark
-      ? AppColors.surfaceVariantDark
-      : AppColors.surfaceVariant,
-);
+                label: Text(genero),
+                selected: seleccionado,
+                // ← Pasar siempre un callback, solo vacío cuando no editamos
+                onSelected: _editando
+                    ? (val) {
+                        setState(() {
+                          if (val) {
+                            _seleccionados.add(genero);
+                          } else {
+                            _seleccionados.remove(genero);
+                          }
+                        });
+                      }
+                    : (_) {}, // ← vacío en lugar de null para mantener el color
+                selectedColor: AppColors.primary,
+                labelStyle: TextStyle(
+                  color: seleccionado ? Colors.white : null,
+                  fontWeight: seleccionado ? FontWeight.w600 : null,
+                ),
+                backgroundColor: Theme.of(context).brightness == Brightness.dark
+                    ? AppColors.surfaceVariantDark
+                    : AppColors.surfaceVariant,
+              );
             }).toList(),
           ),
 
@@ -511,10 +523,11 @@ class _BioSectionState extends State<_BioSection> {
   Future<void> _guardar() async {
     setState(() => _guardando = true);
     await widget.auth.actualizarPerfil({'bio': _ctrl.text.trim()});
-    if (mounted) setState(() {
-      _guardando = false;
-      _editando = false;
-    });
+    if (mounted)
+      setState(() {
+        _guardando = false;
+        _editando = false;
+      });
   }
 
   @override
@@ -682,8 +695,9 @@ class _PublicacionesSection extends StatelessWidget {
                       ),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withOpacity(0.12),
-                        borderRadius:
-                            BorderRadius.circular(ThemeApp.radiusFull),
+                        borderRadius: BorderRadius.circular(
+                          ThemeApp.radiusFull,
+                        ),
                       ),
                       child: Text(
                         '${publicaciones.length}',
@@ -705,7 +719,6 @@ class _PublicacionesSection extends StatelessWidget {
                     child: CircularProgressIndicator(),
                   ),
                 )
-
               // Sin publicaciones
               else if (publicaciones.isEmpty)
                 Center(
@@ -730,14 +743,10 @@ class _PublicacionesSection extends StatelessWidget {
                     ),
                   ),
                 )
-
               // Lista de tarjetas
               else
                 ...publicaciones.map(
-                  (p) => _MiniPublicacionCard(
-                    publicacion: p,
-                    isDark: isDark,
-                  ),
+                  (p) => _MiniPublicacionCard(publicacion: p, isDark: isDark),
                 ),
             ],
           ),
@@ -753,10 +762,7 @@ class _MiniPublicacionCard extends StatelessWidget {
   final PublicacionModel publicacion;
   final bool isDark;
 
-  const _MiniPublicacionCard({
-    required this.publicacion,
-    required this.isDark,
-  });
+  const _MiniPublicacionCard({required this.publicacion, required this.isDark});
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -784,7 +790,8 @@ class _MiniPublicacionCard extends StatelessWidget {
           // Album cover o ícono
           ClipRRect(
             borderRadius: BorderRadius.circular(ThemeApp.spacingSm),
-            child: publicacion.albumCover != null &&
+            child:
+                publicacion.albumCover != null &&
                     publicacion.albumCover!.isNotEmpty
                 ? Image.network(
                     publicacion.albumCover!,
@@ -821,8 +828,8 @@ class _MiniPublicacionCard extends StatelessWidget {
                   Text(
                     publicacion.descripcion,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontStyle: FontStyle.italic,
-                        ),
+                      fontStyle: FontStyle.italic,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -856,10 +863,7 @@ class _MiniPublicacionCard extends StatelessWidget {
               const SizedBox(height: 4),
               // Género chip mini
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 6,
-                  vertical: 2,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
@@ -876,9 +880,9 @@ class _MiniPublicacionCard extends StatelessWidget {
               // Fecha
               Text(
                 _timeAgo(publicacion.creadoEn),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 10,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(fontSize: 10),
               ),
             ],
           ),

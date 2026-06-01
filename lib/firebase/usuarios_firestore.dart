@@ -212,6 +212,24 @@ class UsuariosFirestore {
     }
   }
 
+  Future<bool> cancelarSolicitud(String miUid, String destinoUid) async {
+    try {
+      final batch = _firestore.batch();
+      batch.update(_col.doc(miUid), {
+        'solicitudesEnviadas': FieldValue.arrayRemove([destinoUid]),
+      });
+      batch.update(_col.doc(destinoUid), {
+        'solicitudesRecibidas': FieldValue.arrayRemove([miUid]),
+      });
+      await batch.commit();
+      return true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('cancelarSolicitud error: $e');
+      return false;
+    }
+  }
+
   // ── Stream colección ──────────────────────────────────────────────────────
 
   Stream<QuerySnapshot> getUsuarios() => _col.snapshots();

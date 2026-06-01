@@ -61,6 +61,7 @@ dependencies:
   flutter_native_splash: ^2.4.7
   smooth_page_indicator: ^2.0.1
   debounce_throttle: ^2.0.0
+  flutter_stripe: ^12.6.0
 
 flutter_native_splash:
   color: "#FFFFFF"
@@ -111,7 +112,7 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-    - assets/animations/
+   # - assets/animations/
     - assets/fonts/
 
   # An image asset can refer to one or more resolution-specific "variants", see

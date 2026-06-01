@@ -9,6 +9,34 @@ class PublicacionesFirestore {
     _col = _firestore.collection('publicaciones');
   }
 
+  Future<bool> actualizarAutorNombre(String uid, String nombre) async {
+    try {
+      final query = await _col.where('autorUid', isEqualTo: uid).get();
+      if (query.docs.isEmpty) return true;
+
+      var batch = _firestore.batch();
+      var batchCount = 0;
+
+      for (final doc in query.docs) {
+        batch.update(doc.reference, {'autorNombre': nombre});
+        batchCount++;
+
+        if (batchCount == 500) {
+          await batch.commit();
+          batch = _firestore.batch();
+          batchCount = 0;
+        }
+      }
+
+      if (batchCount > 0) await batch.commit();
+      return true;
+    } catch (e) {
+      // ignore: avoid_print
+      print('actualizarAutorNombre error: $e');
+      return false;
+    }
+  }
+
   // ── Crear ─────────────────────────────────────────────────────────────────
 
   Future<String?> crearPublicacion(Map<String, dynamic> data) async {

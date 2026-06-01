@@ -17,12 +17,38 @@ class _AmigosScreenState extends State<AmigosScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final _searchCtrl = TextEditingController();
+  List<String> _lastGenerosInteres = [];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _cargarSugerencias());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final auth = context.read<AuthProvider>();
+    final user = auth.usuarioActual;
+    final currentGeneros = user?.generosInteres ?? [];
+    if (!_generosIguales(currentGeneros, _lastGenerosInteres)) {
+      _lastGenerosInteres = List.from(currentGeneros);
+      if (user != null) {
+        context.read<AmigosProvider>().cargarSugerencias(
+              currentGeneros,
+              user.uid,
+            );
+      }
+    }
+  }
+
+  bool _generosIguales(List<String> a, List<String> b) {
+    if (a.length != b.length) return false;
+    for (var i = 0; i < a.length; i++) {
+      if (a[i] != b[i]) return false;
+    }
+    return true;
   }
 
   void _cargarSugerencias() {

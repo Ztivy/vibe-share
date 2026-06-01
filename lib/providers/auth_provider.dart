@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:vibe_share/firebase/auth_google.dart';
+import 'package:vibe_share/firebase/publicaciones_firestore.dart';
 import 'package:vibe_share/firebase/usuarios_firestore.dart';
 import 'package:vibe_share/models/usuario_model.dart';
 import 'package:vibe_share/utils/strings_app.dart';
@@ -8,6 +9,7 @@ import 'package:vibe_share/utils/strings_app.dart';
 class AuthProvider extends ChangeNotifier {
   final AuthGoogle _authGoogle = AuthGoogle();
   final UsuariosFirestore _usuariosFirestore = UsuariosFirestore();
+  final PublicacionesFirestore _publicacionesFirestore = PublicacionesFirestore();
 
   bool isDarkMode = false;
   bool isLoading = false;
@@ -95,11 +97,18 @@ class AuthProvider extends ChangeNotifier {
   Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
     if (usuarioActual == null) return false;
     final dataToUpdate = Map<String, dynamic>.from(data);
-    if (dataToUpdate.containsKey('nombre')) {
+    final cambiarNombre = dataToUpdate.containsKey('nombre');
+    if (cambiarNombre) {
       dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
     }
     final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
     if (ok) {
+      if (cambiarNombre) {
+        await _publicacionesFirestore.actualizarAutorNombre(
+          usuarioActual!.uid,
+          dataToUpdate['nombre'].toString(),
+        );
+      }
       usuarioActual = UsuarioModel.fromMap({
         ...usuarioActual!.toMap(),
         ...dataToUpdate,

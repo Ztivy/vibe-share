@@ -55,6 +55,8 @@ class _PerfilView extends StatelessWidget {
         children: [
           // ── Avatar ──────────────────────────────────────────────────
           _AvatarSection(user: user, auth: auth),
+          _NombreSection(user: user, auth: auth),
+          const SizedBox(height: ThemeApp.spacingSm),
 
           const SizedBox(height: ThemeApp.spacingLg),
 
@@ -904,6 +906,160 @@ class _MusicIcon extends StatelessWidget {
         Icons.music_note_rounded,
         color: Colors.white,
         size: 26,
+      ),
+    );
+  }
+}
+
+// ── _NombreSection ────────────────────────────────────────────────────────────
+
+class _NombreSection extends StatefulWidget {
+  final UsuarioModel user;
+  final AuthProvider auth;
+
+  const _NombreSection({required this.user, required this.auth});
+
+  @override
+  State<_NombreSection> createState() => _NombreSectionState();
+}
+
+class _NombreSectionState extends State<_NombreSection> {
+  late TextEditingController _ctrl;
+  bool _editando = false;
+  bool _guardando = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = TextEditingController(text: widget.user.nombre);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _guardar() async {
+    final nuevoNombre = _ctrl.text.trim();
+    if (nuevoNombre.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('El nombre no puede estar vacío.')),
+      );
+      return;
+    }
+    if (nuevoNombre == widget.user.nombre) {
+      setState(() => _editando = false);
+      return;
+    }
+
+    setState(() => _guardando = true);
+    final ok = await widget.auth.actualizarPerfil({'nombre': nuevoNombre});
+    if (mounted) {
+      setState(() {
+        _guardando = false;
+        _editando = false;
+      });
+      if (!ok) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Error al actualizar el nombre.')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: ThemeApp.spacingMd),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(left: ThemeApp.spacingSm),
+                child: Text(
+                  'Nombre de usuario',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
+              ),
+              TextButton.icon(
+                icon: Icon(
+                  _editando ? Icons.close_rounded : Icons.edit_rounded,
+                  size: 18,
+                ),
+                label: Text(_editando ? 'Cancelar' : 'Editar'),
+                onPressed: () {
+                  setState(() {
+                    if (_editando) _ctrl.text = widget.user.nombre;
+                    _editando = !_editando;
+                  });
+                },
+              ),
+            ],
+          ),
+
+          const SizedBox(height: ThemeApp.spacingXs),
+
+          if (_editando) ...[
+            TextField(
+              controller: _ctrl,
+              maxLength: 40,
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                hintText: 'Tu nombre visible',
+                prefixIcon: const Icon(Icons.person_outline_rounded),
+                fillColor: isDark
+                    ? AppColors.surfaceVariantDark
+                    : AppColors.surfaceVariant,
+              ),
+              onSubmitted: (_) => _guardar(),
+            ),
+            const SizedBox(height: ThemeApp.spacingSm),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _guardando ? null : _guardar,
+                child: _guardando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Guardar nombre'),
+              ),
+            ),
+          ] else
+            Padding(
+              padding: const EdgeInsets.only(
+                left: ThemeApp.spacingSm,
+                bottom: ThemeApp.spacingSm,
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.person_outline_rounded,
+                    size: 18,
+                    color: AppColors.textHint,
+                  ),
+                  const SizedBox(width: ThemeApp.spacingSm),
+                  Text(
+                    widget.user.nombre.isNotEmpty
+                        ? widget.user.nombre
+                        : 'Sin nombre',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+        ],
       ),
     );
   }

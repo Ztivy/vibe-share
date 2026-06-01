@@ -28,6 +28,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     PerfilScreen(),
   ];
 
+  void cambiarAPerfil() {
+  setState(() => _currentIndex = 4);
+}
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

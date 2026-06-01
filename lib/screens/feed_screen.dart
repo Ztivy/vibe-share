@@ -5,6 +5,7 @@ import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/providers/publicaciones_provider.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/screens/dashboard_screen.dart';
 import 'package:vibe_share/screens/perfil_publico_screen.dart';
 
 class FeedScreen extends StatefulWidget {
@@ -288,19 +289,34 @@ class _CardHeader extends StatelessWidget {
     return '${dt.day}/${dt.month}/${dt.year}';
   }
 
+  void _navegarAPerfil(BuildContext context) {
+    final miUid = context.read<AuthProvider>().usuarioActual?.uid;
+    final esMio = miUid == publicacion.autorUid;
+
+    if (esMio) {
+      final dashboard =
+          context.findAncestorStateOfType<State<DashboardScreen>>();
+      if (dashboard != null) {
+        (dashboard as dynamic).cambiarAPerfil();
+      }
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PerfilPublicoScreen(uid: publicacion.autorUid),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Avatar + nombre → toca para abrir perfil
+        // Avatar + nombre → toca para ir al perfil
         Expanded(
           child: GestureDetector(
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => PerfilPublicoScreen(uid: publicacion.autorUid),
-              ),
-            ),
+            onTap: () => _navegarAPerfil(context),
             behavior: HitTestBehavior.opaque,
             child: Row(
               children: [
@@ -336,7 +352,7 @@ class _CardHeader extends StatelessWidget {
           ),
         ),
 
-        // Chip de género (no forma parte del tap)
+        // Chip de género (fuera del área tappable)
         if (publicacion.genero.isNotEmpty)
           Chip(
             label: Text(publicacion.genero),

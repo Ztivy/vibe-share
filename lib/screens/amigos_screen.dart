@@ -74,9 +74,23 @@ class _AmigosScreenState extends State<AmigosScreen>
 
 // ── Tab: Buscar ───────────────────────────────────────────────────────────────
 
-class _BuscarTab extends StatelessWidget {
+class _BuscarTab extends StatefulWidget {
   final TextEditingController searchCtrl;
   const _BuscarTab({required this.searchCtrl});
+
+  @override
+  State<_BuscarTab> createState() => _BuscarTabState();
+}
+
+class _BuscarTabState extends State<_BuscarTab> {
+  // Debounce simple sin dependencia externa
+  Future<void> _onChanged(String q, BuildContext context) async {
+    await Future.delayed(const Duration(milliseconds: 500));
+    // Solo busca si el texto sigue siendo el mismo tras la espera
+    if (widget.searchCtrl.text == q) {
+      context.read<AmigosProvider>().buscar(q);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -86,11 +100,10 @@ class _BuscarTab extends StatelessWidget {
 
     return Column(
       children: [
-        // Buscador
         Padding(
           padding: const EdgeInsets.all(ThemeApp.spacingMd),
           child: TextField(
-            controller: searchCtrl,
+            controller: widget.searchCtrl,
             decoration: InputDecoration(
               hintText: StringsApp.friendsSearch,
               prefixIcon: const Icon(Icons.search_rounded),
@@ -103,24 +116,28 @@ class _BuscarTab extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       ),
                     )
-                  : searchCtrl.text.isNotEmpty
+                  : widget.searchCtrl.text.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded),
                           onPressed: () {
-                            searchCtrl.clear();
+                            widget.searchCtrl.clear();
                             context.read<AmigosProvider>().buscar('');
+                            setState(() {});
                           },
                         )
                       : null,
             ),
-            onChanged: (q) => context.read<AmigosProvider>().buscar(q),
+            onChanged: (q) {
+              setState(() {}); // para actualizar el botón clear
+              _onChanged(q, context);
+            },
+            onSubmitted: (q) => context.read<AmigosProvider>().buscar(q),
+            textInputAction: TextInputAction.search,
           ),
         ),
-
-        // Resultados
         Expanded(
           child: provider.resultadosBusqueda.isEmpty
-              ? _EmptySearch(hasQuery: searchCtrl.text.isNotEmpty)
+              ? _EmptySearch(hasQuery: widget.searchCtrl.text.isNotEmpty)
               : ListView.builder(
                   padding: const EdgeInsets.symmetric(
                     horizontal: ThemeApp.spacingMd,

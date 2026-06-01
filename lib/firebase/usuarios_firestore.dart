@@ -13,7 +13,11 @@ class UsuariosFirestore {
 
   Future<bool> insertUsuario(Map<String, dynamic> data) async {
     try {
-      await _col.doc(data['uid'] as String).set(data);
+      final dataToInsert = Map<String, dynamic>.from(data);
+      if (dataToInsert['nombre'] != null && dataToInsert['nombreLower'] == null) {
+        dataToInsert['nombreLower'] = dataToInsert['nombre'].toString().toLowerCase();
+      }
+      await _col.doc(dataToInsert['uid'] as String).set(dataToInsert);
       return true;
     } catch (e) {
       // ignore: avoid_print
@@ -24,7 +28,11 @@ class UsuariosFirestore {
 
   Future<bool> updateUsuario(String uid, Map<String, dynamic> data) async {
     try {
-      await _col.doc(uid).update(data);
+      final dataToUpdate = Map<String, dynamic>.from(data);
+      if (dataToUpdate['nombre'] != null) {
+        dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
+      }
+      await _col.doc(uid).update(dataToUpdate);
       return true;
     } catch (e) {
       // ignore: avoid_print
@@ -55,21 +63,50 @@ class UsuariosFirestore {
   // ── Búsqueda ──────────────────────────────────────────────────────────────
 
   Future<List<UsuarioModel>> buscarUsuarios(String query) async {
-    try {
-      final snap = await _col
-          .where('nombre', isGreaterThanOrEqualTo: query)
-          .where('nombre', isLessThanOrEqualTo: '$query\uf8ff')
-          .limit(20)
-          .get();
-      return snap.docs
-          .map((d) => UsuarioModel.fromMap(d.data() as Map<String, dynamic>))
-          .toList();
-    } catch (e) {
-      // ignore: avoid_print
-      print('buscarUsuarios error: $e');
-      return [];
+  if (query.trim().isEmpty) return [];
+  try {
+    final q = query.trim();
+    final qLower = q.toLowerCase();
+    final qCapital = q[0].toUpperCase() + (q.length > 1 ? q.substring(1).toLowerCase() : '');
+
+    final futures = await Future.wait([
+      _col
+          .where('nombre', isGreaterThanOrEqualTo: q)
+          .where('nombre', isLessThanOrEqualTo: '$q\uf8ff')
+          .limit(10)
+          .get(),
+      _col
+          .where('nombre', isGreaterThanOrEqualTo: qCapital)
+          .where('nombre', isLessThanOrEqualTo: '$qCapital\uf8ff')
+          .limit(10)
+          .get(),
+      _col
+          .where('nombre', isGreaterThanOrEqualTo: qLower)
+          .where('nombre', isLessThanOrEqualTo: '$qLower\uf8ff')
+          .limit(10)
+          .get(),
+      // ← aquí va el fragmento que preguntabas
+      _col
+          .where('nombreLower', isGreaterThanOrEqualTo: qLower)
+          .where('nombreLower', isLessThanOrEqualTo: '$qLower\uf8ff')
+          .limit(10)
+          .get(),
+    ]);
+
+    final Map<String, UsuarioModel> vistos = {};
+    for (final snap in futures) {
+      for (final d in snap.docs) {
+        final u = UsuarioModel.fromMap(d.data() as Map<String, dynamic>);
+        vistos[u.uid] = u;
+      }
     }
+    return vistos.values.toList();
+  } catch (e) {
+    // ignore: avoid_print
+    print('buscarUsuarios error: $e');
+    return [];
   }
+}
 
   /// Devuelve usuarios que comparten al menos un género con [generos].
   Future<List<UsuarioModel>> sugerenciasPorGenero(

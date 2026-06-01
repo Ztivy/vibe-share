@@ -35,46 +35,53 @@ class PublicacionesFirestore {
 
   /// Feed de amigos — publicaciones de una lista de UIDs.
   Stream<List<PublicacionModel>> streamFeedAmigos(
-    List<String> amigosUids, {
-    int limit = 30,
-  }) {
-    if (amigosUids.isEmpty) return Stream.value([]);
-    // Firestore limita whereIn a 30 elementos
-    final uids = amigosUids.take(30).toList();
-    return _col
-        .where('autorUid', whereIn: uids)
-        .orderBy('creadoEn', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map(_mapSnapshot);
-  }
+  List<String> amigosUids, {
+  int limit = 30,
+}) {
+  if (amigosUids.isEmpty) return Stream.value([]);
+  final uids = amigosUids.take(30).toList();
+  return _col
+      .where('autorUid', whereIn: uids)
+      .limit(limit)
+      .snapshots()
+      .map((snap) {
+        final lista = _mapSnapshot(snap);
+        lista.sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+        return lista;
+      });
+}
 
-  /// Sugerencias por género — publicaciones que coinciden con géneros de interés.
-  Stream<List<PublicacionModel>> streamSugerenciasPorGenero(
-    List<String> generos, {
-    int limit = 20,
-  }) {
-    if (generos.isEmpty) return Stream.value([]);
-    return _col
-        .where('genero', whereIn: generos.take(10).toList())
-        .orderBy('creadoEn', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map(_mapSnapshot);
-  }
+Stream<List<PublicacionModel>> streamSugerenciasPorGenero(
+  List<String> generos, {
+  int limit = 20,
+}) {
+  if (generos.isEmpty) return Stream.value([]);
+  return _col
+      .where('genero', whereIn: generos.take(10).toList())
+      .limit(limit)
+      .snapshots()
+      .map((snap) {
+        final lista = _mapSnapshot(snap);
+        lista.sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+        return lista;
+      });
+}
 
   /// Publicaciones de un usuario específico.
   Stream<List<PublicacionModel>> streamPublicacionesDeUsuario(
-    String uid, {
-    int limit = 50,
-  }) {
-    return _col
-        .where('autorUid', isEqualTo: uid)
-        .orderBy('creadoEn', descending: true)
-        .limit(limit)
-        .snapshots()
-        .map(_mapSnapshot);
-  }
+  String uid, {
+  int limit = 50,
+}) {
+  return _col
+      .where('autorUid', isEqualTo: uid)
+      .limit(limit)
+      .snapshots()
+      .map((snap) {
+        final lista = _mapSnapshot(snap);
+        lista.sort((a, b) => b.creadoEn.compareTo(a.creadoEn));
+        return lista;
+      });
+}
 
   // ── Likes ─────────────────────────────────────────────────────────────────
 

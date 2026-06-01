@@ -60,9 +60,12 @@ class AuthProvider extends ChangeNotifier {
             creadoEn: DateTime.now(),
           );
           await _usuariosFirestore.insertUsuario(nuevo.toMap());
-          usuarioActual = nuevo;
         } else {
           usuarioActual = existente;
+          await _usuariosFirestore.updateUsuario(
+            user.uid,
+            {'nombreLower': existente.nombre.toLowerCase()},
+          );
         }
         isLoading = false;
         notifyListeners();
@@ -91,11 +94,15 @@ class AuthProvider extends ChangeNotifier {
 
   Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
     if (usuarioActual == null) return false;
-    final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, data);
+    final dataToUpdate = Map<String, dynamic>.from(data);
+    if (dataToUpdate.containsKey('nombre')) {
+      dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
+    }
+    final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
     if (ok) {
       usuarioActual = UsuarioModel.fromMap({
         ...usuarioActual!.toMap(),
-        ...data,
+        ...dataToUpdate,
       });
       notifyListeners();
     }

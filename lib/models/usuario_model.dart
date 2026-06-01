@@ -49,6 +49,7 @@ class UsuarioModel {
     return {
       'uid': uid,
       'nombre': nombre,
+      'nombreLower': nombre.toLowerCase(),
       'email': email,
       'avatarUrl': avatarUrl,
       'bio': bio,

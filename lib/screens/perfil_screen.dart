@@ -425,20 +425,29 @@ class _GenerosSectionState extends State<_GenerosSection> {
               if (!_editando && !seleccionado) return const SizedBox.shrink();
 
               return FilterChip(
-                label: Text(genero),
-                selected: seleccionado,
-                onSelected: _editando
-                    ? (val) {
-                        setState(() {
-                          if (val) {
-                            _seleccionados.add(genero);
-                          } else {
-                            _seleccionados.remove(genero);
-                          }
-                        });
-                      }
-                    : null,
-              );
+  label: Text(genero),
+  selected: seleccionado,
+  // ← Pasar siempre un callback, solo vacío cuando no editamos
+  onSelected: _editando
+      ? (val) {
+          setState(() {
+            if (val) {
+              _seleccionados.add(genero);
+            } else {
+              _seleccionados.remove(genero);
+            }
+          });
+        }
+      : (_) {}, // ← vacío en lugar de null para mantener el color
+  selectedColor: AppColors.primary,
+  labelStyle: TextStyle(
+    color: seleccionado ? Colors.white : null,
+    fontWeight: seleccionado ? FontWeight.w600 : null,
+  ),
+  backgroundColor: Theme.of(context).brightness == Brightness.dark
+      ? AppColors.surfaceVariantDark
+      : AppColors.surfaceVariant,
+);
             }).toList(),
           ),
 

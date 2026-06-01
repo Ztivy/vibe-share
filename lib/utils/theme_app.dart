@@ -222,19 +222,23 @@ class ThemeApp {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceVariant,
-        labelStyle: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.textSecondary,
-        ),
-        selectedColor: AppColors.primary,
-        secondaryLabelStyle: AppTextStyles.labelSmall.copyWith(
-          color: Colors.white,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusFull),
-        ),
-        side: BorderSide.none,
-      ),
+  backgroundColor: AppColors.surfaceVariant,
+  labelStyle: AppTextStyles.labelSmall.copyWith(
+    color: AppColors.textSecondary,
+  ),
+  selectedColor: AppColors.primary,
+  secondarySelectedColor: AppColors.primary,
+  secondaryLabelStyle: AppTextStyles.labelSmall.copyWith(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+  ),
+  checkmarkColor: Colors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(radiusFull),
+  ),
+  side: BorderSide.none,
+  showCheckmark: true,
+),
       dividerTheme: const DividerThemeData(
         color: AppColors.border,
         thickness: 1,
@@ -367,19 +371,23 @@ class ThemeApp {
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceVariantDark,
-        labelStyle: AppTextStyles.labelSmall.copyWith(
-          color: AppColors.textSecondaryDark,
-        ),
-        selectedColor: AppColors.primary,
-        secondaryLabelStyle: AppTextStyles.labelSmall.copyWith(
-          color: Colors.white,
-        ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radiusFull),
-        ),
-        side: BorderSide.none,
-      ),
+  backgroundColor: AppColors.surfaceVariantDark,
+  labelStyle: AppTextStyles.labelSmall.copyWith(
+    color: AppColors.textSecondaryDark,
+  ),
+  selectedColor: AppColors.primary,
+  secondarySelectedColor: AppColors.primary,
+  secondaryLabelStyle: AppTextStyles.labelSmall.copyWith(
+    color: Colors.white,
+    fontWeight: FontWeight.w700,
+  ),
+  checkmarkColor: Colors.white,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(radiusFull),
+  ),
+  side: BorderSide.none,
+  showCheckmark: true,
+),
       dividerTheme: const DividerThemeData(
         color: AppColors.borderDark,
         thickness: 1,

@@ -5,6 +5,7 @@ import 'package:vibe_share/providers/amigos_provider.dart';
 import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/screens/perfil_publico_screen.dart';
 
 class AmigosScreen extends StatefulWidget {
   const AmigosScreen({super.key});
@@ -358,70 +359,82 @@ class _UsuarioTile extends StatelessWidget {
     final enviada = miUsuario.solicitudesEnviadas.contains(usuario.uid);
     final recibida = miUsuario.solicitudesRecibidas.contains(usuario.uid);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
-      padding: const EdgeInsets.all(ThemeApp.spacingMd),
-      decoration: BoxDecoration(
-        color: Theme.of(context).brightness == Brightness.dark
-            ? AppColors.surfaceVariantDark
-            : AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
-        border: Border.all(
-          color: Theme.of(context).brightness == Brightness.dark
-              ? AppColors.borderDark
-              : AppColors.border,
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PerfilPublicoScreen(
+            uid: usuario.uid,
+            usuarioInicial: usuario,
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          // Avatar
-          CircleAvatar(
-            radius: 24,
-            backgroundColor: AppColors.primary.withOpacity(0.15),
-            backgroundImage: usuario.avatarUrl.isNotEmpty
-                ? NetworkImage(usuario.avatarUrl)
-                : null,
-            child: usuario.avatarUrl.isEmpty
-                ? const Icon(Icons.person_rounded,
-                    color: AppColors.primary, size: 26)
-                : null,
+      borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
+        padding: const EdgeInsets.all(ThemeApp.spacingMd),
+        decoration: BoxDecoration(
+          color: Theme.of(context).brightness == Brightness.dark
+              ? AppColors.surfaceVariantDark
+              : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppColors.borderDark
+                : AppColors.border,
           ),
+        ),
+        child: Row(
+          children: [
+            // Avatar
+            CircleAvatar(
+              radius: 24,
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundImage: usuario.avatarUrl.isNotEmpty
+                  ? NetworkImage(usuario.avatarUrl)
+                  : null,
+              child: usuario.avatarUrl.isEmpty
+                  ? const Icon(Icons.person_rounded,
+                      color: AppColors.primary, size: 26)
+                  : null,
+            ),
 
-          const SizedBox(width: ThemeApp.spacingMd),
+            const SizedBox(width: ThemeApp.spacingMd),
 
-          // Info
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  usuario.nombre,
-                  style: Theme.of(context).textTheme.titleMedium,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (usuario.generosInteres.isNotEmpty)
+            // Info
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Text(
-                    usuario.generosInteres.take(3).join(' · '),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    usuario.nombre,
+                    style: Theme.of(context).textTheme.titleMedium,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-              ],
+                  if (usuario.generosInteres.isNotEmpty)
+                    Text(
+                      usuario.generosInteres.take(3).join(' · '),
+                      style: Theme.of(context).textTheme.bodySmall,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
             ),
-          ),
 
-          const SizedBox(width: ThemeApp.spacingSm),
+            const SizedBox(width: ThemeApp.spacingSm),
 
-          // Botón acción
-          _AccionBoton(
-            esAmigo: esAmigo,
-            enviada: enviada,
-            recibida: recibida,
-            miUid: miUid,
-            destinoUid: usuario.uid,
-          ),
-        ],
+            // Botón acción
+            _AccionBoton(
+              esAmigo: esAmigo,
+              enviada: enviada,
+              recibida: recibida,
+              miUid: miUid,
+              destinoUid: usuario.uid,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -659,74 +672,83 @@ class _SolicitudRecibidaTileState extends State<_SolicitudRecibidaTile> {
     final avatar = _usuario?.avatarUrl ?? '';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
-      padding: const EdgeInsets.all(ThemeApp.spacingMd),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
-        border: Border.all(
-          color: AppColors.primary.withOpacity(0.3),
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PerfilPublicoScreen(uid: widget.origenUid),
         ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: AppColors.primary.withOpacity(0.15),
-            backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-            child: avatar.isEmpty
-                ? const Icon(Icons.person_rounded,
-                    color: AppColors.primary, size: 22)
-                : null,
+      borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
+        padding: const EdgeInsets.all(ThemeApp.spacingMd),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+          border: Border.all(
+            color: AppColors.primary.withOpacity(0.3),
           ),
-          const SizedBox(width: ThemeApp.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(nombre,
-                    style: Theme.of(context).textTheme.titleMedium,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
-                Text(
-                  StringsApp.notifFriendReq,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child: avatar.isEmpty
+                  ? const Icon(Icons.person_rounded,
+                      color: AppColors.primary, size: 22)
+                  : null,
             ),
-          ),
-          if (_accionando)
-            const SizedBox(
-              width: 20,
-              height: 20,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          else
-            Row(
-              children: [
-                // Rechazar
-                IconButton(
-                  icon: const Icon(Icons.close_rounded,
-                      color: AppColors.error, size: 22),
-                  onPressed: _rechazar,
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.error.withOpacity(0.1),
+            const SizedBox(width: ThemeApp.spacingMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(nombre,
+                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    StringsApp.notifFriendReq,
+                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                ),
-                const SizedBox(width: ThemeApp.spacingSm),
-                // Aceptar
-                IconButton(
-                  icon: const Icon(Icons.check_rounded,
-                      color: AppColors.success, size: 22),
-                  onPressed: _aceptar,
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.success.withOpacity(0.1),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
-        ],
+            if (_accionando)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            else
+              Row(
+                children: [
+                  // Rechazar
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded,
+                        color: AppColors.error, size: 22),
+                    onPressed: _rechazar,
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.error.withOpacity(0.1),
+                    ),
+                  ),
+                  const SizedBox(width: ThemeApp.spacingSm),
+                  // Aceptar
+                  IconButton(
+                    icon: const Icon(Icons.check_rounded,
+                        color: AppColors.success, size: 22),
+                    onPressed: _aceptar,
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.success.withOpacity(0.1),
+                    ),
+                  ),
+                ],
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -776,51 +798,60 @@ class _SolicitudEnviadaTileState extends State<_SolicitudEnviadaTile> {
     final avatar = _usuario?.avatarUrl ?? '';
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
-      padding: const EdgeInsets.all(ThemeApp.spacingMd),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
-        borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
-        border: Border.all(
-          color: isDark ? AppColors.borderDark : AppColors.border,
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PerfilPublicoScreen(uid: widget.destinoUid),
         ),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: AppColors.primary.withOpacity(0.15),
-            backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
-            child: avatar.isEmpty
-                ? const Icon(Icons.person_rounded,
-                    color: AppColors.primary, size: 22)
-                : null,
+      borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: ThemeApp.spacingSm),
+        padding: const EdgeInsets.all(ThemeApp.spacingMd),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.surfaceVariantDark : AppColors.surfaceVariant,
+          borderRadius: BorderRadius.circular(ThemeApp.radiusMd),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.border,
           ),
-          const SizedBox(width: ThemeApp.spacingMd),
-          Expanded(
-            child: Text(nombre,
-                style: Theme.of(context).textTheme.titleMedium,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: ThemeApp.spacingMd,
-              vertical: ThemeApp.spacingSm,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 22,
+              backgroundColor: AppColors.primary.withOpacity(0.15),
+              backgroundImage: avatar.isNotEmpty ? NetworkImage(avatar) : null,
+              child: avatar.isEmpty
+                  ? const Icon(Icons.person_rounded,
+                      color: AppColors.primary, size: 22)
+                  : null,
             ),
-            decoration: BoxDecoration(
-              color: AppColors.textHint.withOpacity(0.12),
-              borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
+            const SizedBox(width: ThemeApp.spacingMd),
+            Expanded(
+              child: Text(nombre,
+                  style: Theme.of(context).textTheme.titleMedium,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis),
             ),
-            child: Text(
-              StringsApp.friendsPending,
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.textHint,
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: ThemeApp.spacingMd,
+                vertical: ThemeApp.spacingSm,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.textHint.withOpacity(0.12),
+                borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
+              ),
+              child: Text(
+                StringsApp.friendsPending,
+                style: AppTextStyles.labelSmall.copyWith(
+                  color: AppColors.textHint,
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

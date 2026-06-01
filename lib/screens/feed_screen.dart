@@ -5,6 +5,7 @@ import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/providers/publicaciones_provider.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/screens/perfil_publico_screen.dart';
 
 class FeedScreen extends StatefulWidget {
   const FeedScreen({super.key});
@@ -291,39 +292,51 @@ class _CardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        // Avatar
-        CircleAvatar(
-          radius: 20,
-          backgroundColor: AppColors.primary.withOpacity(0.15),
-          backgroundImage: publicacion.autorAvatarUrl.isNotEmpty
-              ? NetworkImage(publicacion.autorAvatarUrl)
-              : null,
-          child: publicacion.autorAvatarUrl.isEmpty
-              ? const Icon(Icons.person_rounded,
-                  size: 22, color: AppColors.primary)
-              : null,
-        ),
-
-        const SizedBox(width: ThemeApp.spacingMd),
-
-        // Nombre + fecha
+        // Avatar + nombre → toca para abrir perfil
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                publicacion.autorNombre,
-                style: Theme.of(context).textTheme.titleMedium,
+          child: GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => PerfilPublicoScreen(uid: publicacion.autorUid),
               ),
-              Text(
-                _timeAgo(publicacion.creadoEn),
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
+            ),
+            behavior: HitTestBehavior.opaque,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppColors.primary.withOpacity(0.15),
+                  backgroundImage: publicacion.autorAvatarUrl.isNotEmpty
+                      ? NetworkImage(publicacion.autorAvatarUrl)
+                      : null,
+                  child: publicacion.autorAvatarUrl.isEmpty
+                      ? const Icon(Icons.person_rounded,
+                          size: 22, color: AppColors.primary)
+                      : null,
+                ),
+                const SizedBox(width: ThemeApp.spacingMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        publicacion.autorNombre,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      Text(
+                        _timeAgo(publicacion.creadoEn),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
 
-        // Chip de género
+        // Chip de género (no forma parte del tap)
         if (publicacion.genero.isNotEmpty)
           Chip(
             label: Text(publicacion.genero),

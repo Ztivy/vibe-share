@@ -1,6 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vibe_share/models/usuario_model.dart';
 
+class BuscarUsuariosResultado {
+  final List<UsuarioModel> usuarios;
+  final String? error;
+
+  BuscarUsuariosResultado({required this.usuarios, this.error});
+}
+
 class UsuariosFirestore {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   late final CollectionReference _col;
@@ -62,9 +69,25 @@ class UsuariosFirestore {
 
   // ── Búsqueda ──────────────────────────────────────────────────────────────
 
+  Future<BuscarUsuariosResultado> buscarUsuariosConEstado(String query) async {
+    if (query.trim().isEmpty) {
+      return BuscarUsuariosResultado(usuarios: []);
+    }
+
+    try {
+      final usuarios = await buscarUsuarios(query);
+      return BuscarUsuariosResultado(usuarios: usuarios);
+    } catch (e) {
+      return BuscarUsuariosResultado(
+        usuarios: [],
+        error: 'Error al buscar usuarios: $e',
+      );
+    }
+  }
+
   Future<List<UsuarioModel>> buscarUsuarios(String query) async {
-  if (query.trim().isEmpty) return [];
-  try {
+    if (query.trim().isEmpty) return [];
+    try {
     final q = query.trim();
     final qLower = q.toLowerCase();
     final qCapital = q[0].toUpperCase() + (q.length > 1 ? q.substring(1).toLowerCase() : '');

@@ -139,16 +139,16 @@ class _BuscarTabState extends State<_BuscarTab> {
           child: provider.resultadosBusqueda.isEmpty
               ? _EmptySearch(hasQuery: widget.searchCtrl.text.isNotEmpty)
               : ListView.builder(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: ThemeApp.spacingMd,
-                  ),
-                  itemCount: provider.resultadosBusqueda.length,
-                  itemBuilder: (_, i) => _UsuarioTile(
-                    usuario: provider.resultadosBusqueda[i],
-                    miUid: miUid,
-                    miUsuario: auth.usuarioActual!,
-                  ),
-                ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: ThemeApp.spacingMd,
+                      ),
+                      itemCount: provider.resultadosBusqueda.length,
+                      itemBuilder: (_, i) => _UsuarioTile(
+                        usuario: provider.resultadosBusqueda[i],
+                        miUid: miUid,
+                        miUsuario: auth.usuarioActual!,
+                      ),
+                    ),
         ),
       ],
     );
@@ -185,6 +185,7 @@ class _EmptySearch extends StatelessWidget {
     );
   }
 }
+
 
 // ── Tab: Solicitudes ──────────────────────────────────────────────────────────
 
@@ -423,23 +424,47 @@ class _AccionBoton extends StatefulWidget {
 
 class _AccionBotonState extends State<_AccionBoton> {
   bool _loading = false;
+  bool _enviada = false; // estado local optimista
+
+  @override
+  void initState() {
+    super.initState();
+    _enviada = widget.enviada;
+  }
 
   Future<void> _accion() async {
+    if (_loading) return;
     setState(() => _loading = true);
+
     final provider = context.read<AmigosProvider>();
     final auth = context.read<AuthProvider>();
+    final miNombre = auth.usuarioActual?.nombre ?? '';
+    final miAvatar = auth.usuarioActual?.avatarUrl ?? '';
 
     bool ok = false;
     if (widget.recibida) {
-      ok = await provider.aceptarSolicitud(widget.miUid, widget.destinoUid);
-    } else if (!widget.enviada && !widget.esAmigo) {
-      ok = await provider.enviarSolicitud(widget.miUid, widget.destinoUid);
+      ok = await provider.aceptarSolicitud(
+        widget.miUid,
+        widget.destinoUid,
+        miNombre: miNombre,
+        miAvatar: miAvatar,
+      );
+    } else if (!_enviada && !widget.esAmigo) {
+      // Actualización optimista: mostrar "Pendiente" inmediatamente
+      setState(() => _enviada = true);
+      ok = await provider.enviarSolicitud(
+        widget.miUid,
+        widget.destinoUid,
+        miNombre: miNombre,
+        miAvatar: miAvatar,
+      );
+      if (!ok) {
+        // Revertir si falló
+        setState(() => _enviada = false);
+      }
     }
 
     if (ok) {
-      // Refrescar usuario en AuthProvider
-      await auth.actualizarPerfil({});
-      // Recargar datos del usuario desde Firestore
       auth.refrescarUsuario();
     }
 
@@ -448,6 +473,9 @@ class _AccionBotonState extends State<_AccionBoton> {
 
   @override
   Widget build(BuildContext context) {
+    // Usar _enviada (local) en lugar de widget.enviada
+    final estaEnviada = _enviada || widget.enviada;
+
     if (widget.esAmigo) {
       return Container(
         padding: const EdgeInsets.symmetric(
@@ -461,21 +489,18 @@ class _AccionBotonState extends State<_AccionBoton> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.check_rounded,
-                size: 16, color: AppColors.success),
+            const Icon(Icons.check_rounded, size: 16, color: AppColors.success),
             const SizedBox(width: 4),
             Text(
               'Amigos',
-              style: AppTextStyles.labelSmall.copyWith(
-                color: AppColors.success,
-              ),
+              style: AppTextStyles.labelSmall.copyWith(color: AppColors.success),
             ),
           ],
         ),
       );
     }
 
-    if (widget.enviada) {
+    if (estaEnviada) {
       return Container(
         padding: const EdgeInsets.symmetric(
           horizontal: ThemeApp.spacingMd,
@@ -485,16 +510,33 @@ class _AccionBotonState extends State<_AccionBoton> {
           color: AppColors.textHint.withOpacity(0.12),
           borderRadius: BorderRadius.circular(ThemeApp.radiusFull),
         ),
-        child: Text(
-          StringsApp.friendsPending,
-          style: AppTextStyles.labelSmall.copyWith(
-            color: AppColors.textHint,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_loading)
+              const SizedBox(
+                width: 12,
+                height: 12,
+                child: CircularProgressIndicator(
+                  strokeWidth: 1.5,
+                  color: AppColors.textHint,
+                ),
+              )
+            else
+              const Icon(Icons.schedule_rounded,
+                  size: 14, color: AppColors.textHint),
+            const SizedBox(width: 4),
+            Text(
+              StringsApp.friendsPending,
+              style: AppTextStyles.labelSmall.copyWith(
+                color: AppColors.textHint,
+              ),
+            ),
+          ],
         ),
       );
     }
 
-    // Botón agregar o aceptar
     return _loading
         ? const SizedBox(
             width: 20,
@@ -514,9 +556,7 @@ class _AccionBotonState extends State<_AccionBoton> {
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
             child: Text(
-              widget.recibida
-                  ? StringsApp.friendsAccept
-                  : StringsApp.friendsAdd,
+              widget.recibida ? StringsApp.friendsAccept : StringsApp.friendsAdd,
               style: AppTextStyles.labelSmall.copyWith(color: Colors.white),
             ),
           );
@@ -561,7 +601,12 @@ class _SolicitudRecibidaTileState extends State<_SolicitudRecibidaTile> {
     setState(() => _accionando = true);
     final provider = context.read<AmigosProvider>();
     final auth = context.read<AuthProvider>();
-    await provider.aceptarSolicitud(widget.miUid, widget.origenUid);
+    await provider.aceptarSolicitud(
+      widget.miUid,
+      widget.origenUid,
+      miNombre: auth.usuarioActual?.nombre ?? '',
+      miAvatar: auth.usuarioActual?.avatarUrl ?? '',
+    );
     auth.refrescarUsuario();
     if (mounted) setState(() => _accionando = false);
   }

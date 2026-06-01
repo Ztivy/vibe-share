@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:vibe_share/firebase/notificaciones_firestore.dart';
+import 'package:vibe_share/providers/auth_provider.dart';
 import 'package:vibe_share/screens/feed_screen.dart';
 import 'package:vibe_share/screens/nueva_publicacion_screen.dart';
 import 'package:vibe_share/screens/perfil_screen.dart';
@@ -71,7 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   selectedColor: AppColors.accent,
                 ),
                 SalomonBottomBarItem(
-                  icon: const Icon(Icons.people_rounded),
+                  icon: const _FriendsIconBadge(),
                   title: Text(StringsApp.navFriends),
                 ),
                 SalomonBottomBarItem(
@@ -93,6 +96,56 @@ class _DiscoverPlaceholder extends StatelessWidget {
   Widget build(BuildContext context) => const Scaffold(
         body: Center(child: Text('Descubrir — C7')),
       );
+}
+
+class _FriendsIconBadge extends StatelessWidget {
+  const _FriendsIconBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+    final uid = auth.usuarioActual?.uid;
+
+    if (uid == null) {
+      return const Icon(Icons.people_rounded);
+    }
+
+    return StreamBuilder<int>(
+      stream: NotificacionesFirestore().streamNoLeidas(uid),
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.people_rounded),
+            if (count > 0)
+              Positioned(
+                right: -6,
+                top: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
 }
 
 class _FriendsPlaceholder extends StatelessWidget {

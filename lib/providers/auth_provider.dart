@@ -6,7 +6,10 @@ import 'package:vibe_share/firebase/usuarios_firestore.dart';
 import 'package:vibe_share/models/usuario_model.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 
+final PublicacionesFirestore _publicacionesFirestore = PublicacionesFirestore();
+
 class AuthProvider extends ChangeNotifier {
+  
   final AuthGoogle _authGoogle = AuthGoogle();
   final UsuariosFirestore _usuariosFirestore = UsuariosFirestore();
   final PublicacionesFirestore _publicacionesFirestore = PublicacionesFirestore();
@@ -94,29 +97,41 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Perfil ────────────────────────────────────────────────────────────────
 
-  Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
-    if (usuarioActual == null) return false;
-    final dataToUpdate = Map<String, dynamic>.from(data);
-    final cambiarNombre = dataToUpdate.containsKey('nombre');
-    if (cambiarNombre) {
-      dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
-    }
-    final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
-    if (ok) {
-      if (cambiarNombre) {
-        await _publicacionesFirestore.actualizarAutorNombre(
-          usuarioActual!.uid,
-          dataToUpdate['nombre'].toString(),
-        );
-      }
-      usuarioActual = UsuarioModel.fromMap({
-        ...usuarioActual!.toMap(),
-        ...dataToUpdate,
-      });
-      notifyListeners();
-    }
-    return ok;
+  // lib/providers/auth_provider.dart
+
+Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
+  if (usuarioActual == null) return false;
+  final dataToUpdate = Map<String, dynamic>.from(data);
+  if (dataToUpdate.containsKey('nombre')) {
+    dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
   }
+
+  final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
+  if (!ok) return false;
+
+  // ── Si cambió el nombre o avatar, propagar a publicaciones ──────────────
+  final camposPublicacion = <String, dynamic>{};
+  if (dataToUpdate.containsKey('nombre')) {
+    camposPublicacion['autorNombre'] = dataToUpdate['nombre'];
+  }
+  if (dataToUpdate.containsKey('avatarUrl')) {
+    camposPublicacion['autorAvatarUrl'] = dataToUpdate['avatarUrl'];
+  }
+
+  if (camposPublicacion.isNotEmpty) {
+    await _publicacionesFirestore.actualizarDatosAutor(
+      usuarioActual!.uid,
+      camposPublicacion,
+    );
+  }
+
+  usuarioActual = UsuarioModel.fromMap({
+    ...usuarioActual!.toMap(),
+    ...dataToUpdate,
+  });
+  notifyListeners();
+  return true;
+}
 
   // ── Theme ─────────────────────────────────────────────────────────────────
 

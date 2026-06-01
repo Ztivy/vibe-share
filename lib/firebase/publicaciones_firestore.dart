@@ -61,6 +61,40 @@ class PublicacionesFirestore {
         .map(_mapSnapshot);
   }
 
+  Future<void> actualizarDatosAutor(
+  String uid,
+  Map<String, dynamic> campos,
+) async {
+  try {
+    // Firestore limita batches a 500 escrituras
+    const batchSize = 400;
+    var snap = await _col
+        .where('autorUid', isEqualTo: uid)
+        .limit(batchSize)
+        .get();
+
+    while (snap.docs.isNotEmpty) {
+      final batch = _firestore.batch();
+      for (final doc in snap.docs) {
+        batch.update(doc.reference, campos);
+      }
+      await batch.commit();
+
+      if (snap.docs.length < batchSize) break;
+
+      // Siguiente página
+      snap = await _col
+          .where('autorUid', isEqualTo: uid)
+          .startAfterDocument(snap.docs.last)
+          .limit(batchSize)
+          .get();
+    }
+  } catch (e) {
+    // ignore: avoid_print
+    print('actualizarDatosAutor error: $e');
+  }
+}
+
   /// Feed de amigos — publicaciones de una lista de UIDs.
   Stream<List<PublicacionModel>> streamFeedAmigos(
   List<String> amigosUids, {

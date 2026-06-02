@@ -1,18 +1,19 @@
+// lib/providers/auth_provider.dart
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:vibe_share/firebase/auth_google.dart';
+import 'package:vibe_share/firebase/fcm_service.dart';
 import 'package:vibe_share/firebase/publicaciones_firestore.dart';
 import 'package:vibe_share/firebase/usuarios_firestore.dart';
 import 'package:vibe_share/models/usuario_model.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 
-final PublicacionesFirestore _publicacionesFirestore = PublicacionesFirestore();
-
 class AuthProvider extends ChangeNotifier {
-  
   final AuthGoogle _authGoogle = AuthGoogle();
   final UsuariosFirestore _usuariosFirestore = UsuariosFirestore();
   final PublicacionesFirestore _publicacionesFirestore = PublicacionesFirestore();
+  final FcmService _fcmService = FcmService();
 
   bool isDarkMode = false;
   bool isLoading = false;
@@ -38,6 +39,9 @@ class AuthProvider extends ChangeNotifier {
             avatarUrl: user.photoURL ?? StringsApp.defaultAvatar,
             creadoEn: DateTime.now(),
           );
+
+      // Guardar token FCM al detectar sesión activa
+      await _fcmService.inicializar(user.uid);
     } else {
       usuarioActual = null;
     }
@@ -72,6 +76,10 @@ class AuthProvider extends ChangeNotifier {
             {'nombreLower': existente.nombre.toLowerCase()},
           );
         }
+
+        // Guardar token FCM al iniciar sesión
+        await _fcmService.inicializar(user.uid);
+
         isLoading = false;
         notifyListeners();
         return true;
@@ -90,6 +98,10 @@ class AuthProvider extends ChangeNotifier {
   // ── Logout ────────────────────────────────────────────────────────────────
 
   Future<void> logout() async {
+    // Limpiar token FCM antes de cerrar sesión
+    if (usuarioActual != null) {
+      await _fcmService.limpiarToken(usuarioActual!.uid);
+    }
     await _authGoogle.signOut();
     usuarioActual = null;
     notifyListeners();
@@ -97,41 +109,40 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Perfil ────────────────────────────────────────────────────────────────
 
-  // lib/providers/auth_provider.dart
+  Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
+    if (usuarioActual == null) return false;
+    final dataToUpdate = Map<String, dynamic>.from(data);
+    if (dataToUpdate.containsKey('nombre')) {
+      dataToUpdate['nombreLower'] =
+          dataToUpdate['nombre'].toString().toLowerCase();
+    }
 
-Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
-  if (usuarioActual == null) return false;
-  final dataToUpdate = Map<String, dynamic>.from(data);
-  if (dataToUpdate.containsKey('nombre')) {
-    dataToUpdate['nombreLower'] = dataToUpdate['nombre'].toString().toLowerCase();
+    final ok =
+        await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
+    if (!ok) return false;
+
+    final camposPublicacion = <String, dynamic>{};
+    if (dataToUpdate.containsKey('nombre')) {
+      camposPublicacion['autorNombre'] = dataToUpdate['nombre'];
+    }
+    if (dataToUpdate.containsKey('avatarUrl')) {
+      camposPublicacion['autorAvatarUrl'] = dataToUpdate['avatarUrl'];
+    }
+
+    if (camposPublicacion.isNotEmpty) {
+      await _publicacionesFirestore.actualizarDatosAutor(
+        usuarioActual!.uid,
+        camposPublicacion,
+      );
+    }
+
+    usuarioActual = UsuarioModel.fromMap({
+      ...usuarioActual!.toMap(),
+      ...dataToUpdate,
+    });
+    notifyListeners();
+    return true;
   }
-
-  final ok = await _usuariosFirestore.updateUsuario(usuarioActual!.uid, dataToUpdate);
-  if (!ok) return false;
-
-  // ── Si cambió el nombre o avatar, propagar a publicaciones ──────────────
-  final camposPublicacion = <String, dynamic>{};
-  if (dataToUpdate.containsKey('nombre')) {
-    camposPublicacion['autorNombre'] = dataToUpdate['nombre'];
-  }
-  if (dataToUpdate.containsKey('avatarUrl')) {
-    camposPublicacion['autorAvatarUrl'] = dataToUpdate['avatarUrl'];
-  }
-
-  if (camposPublicacion.isNotEmpty) {
-    await _publicacionesFirestore.actualizarDatosAutor(
-      usuarioActual!.uid,
-      camposPublicacion,
-    );
-  }
-
-  usuarioActual = UsuarioModel.fromMap({
-    ...usuarioActual!.toMap(),
-    ...dataToUpdate,
-  });
-  notifyListeners();
-  return true;
-}
 
   // ── Theme ─────────────────────────────────────────────────────────────────
 
@@ -140,20 +151,18 @@ Future<bool> actualizarPerfil(Map<String, dynamic> data) async {
     notifyListeners();
   }
 
-  // ── Refrescar usuario desde Firestore ────────────────────────────────────
+  // ── Refrescar usuario ─────────────────────────────────────────────────────
 
-Future<void> refrescarUsuario() async {
-  if (usuarioActual == null) return;
-  final doc = await _usuariosFirestore.getUsuario(usuarioActual!.uid);
-  if (doc != null) {
-    usuarioActual = doc;
-    notifyListeners();
+  Future<void> refrescarUsuario() async {
+    if (usuarioActual == null) return;
+    final doc = await _usuariosFirestore.getUsuario(usuarioActual!.uid);
+    if (doc != null) {
+      usuarioActual = doc;
+      notifyListeners();
+    }
   }
-}
 
-// ── Obtener usuario por UID (para tiles de solicitudes) ──────────────────
-
-Future<UsuarioModel?> getUsuarioPorUid(String uid) async {
-  return await _usuariosFirestore.getUsuario(uid);
-}
+  Future<UsuarioModel?> getUsuarioPorUid(String uid) async {
+    return await _usuariosFirestore.getUsuario(uid);
+  }
 }

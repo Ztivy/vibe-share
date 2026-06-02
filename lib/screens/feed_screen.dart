@@ -633,7 +633,15 @@ class _CardActions extends StatelessWidget {
               : Icons.favorite_border_rounded,
           label: '${publicacion.likesCount}',
           color: tieneLike ? AppColors.accent : null,
-          onTap: () => provider.toggleLike(publicacion.id, miUid),
+          onTap: () {
+            final auth = context.read<AuthProvider>();
+            provider.toggleLike(
+              publicacionId: publicacion.id,
+              miUid: miUid,
+              miNombre: auth.usuarioActual?.nombre ?? '',
+              publicacion: publicacion,
+            );
+          },
         ),
         const SizedBox(width: ThemeApp.spacingMd),
         _ActionButton(

@@ -1,4 +1,5 @@
 // lib/screens/feed_screen.dart
+import 'package:vibe_share/screens/comentarios_sheet.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:vibe_share/models/publicacion_model.dart';
@@ -647,14 +648,7 @@ class _CardActions extends StatelessWidget {
         _ActionButton(
           icon: Icons.chat_bubble_outline_rounded,
           label: '${publicacion.comentariosCount}',
-          onTap: () {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Comentarios disponibles próximamente'),
-                duration: Duration(seconds: 1),
-              ),
-            );
-          },
+          onTap: () => mostrarComentarios(context, publicacion),
         ),
         const Spacer(),
         _ActionButton(

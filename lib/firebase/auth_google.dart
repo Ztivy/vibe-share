@@ -3,30 +3,23 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthGoogle {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
 
   User? get usuarioActual => _auth.currentUser;
 
   Stream<User?> get authStateChanges => _auth.authStateChanges();
 
-  Future<User?> signInWithGoogle() async {
+    Future<User?> signInWithGoogle() async {
     try {
-      await _googleSignIn.initialize(
-        serverClientId: '173763559487-ta681nuges1bgo0q2f6jq70086jrur9m.apps.googleusercontent.com',
-      );
-
-      final GoogleSignInAccount googleUser =
-          await _googleSignIn.authenticate();
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) return null; // usuario canceló
 
       final GoogleSignInAuthentication googleAuth =
           await googleUser.authentication;
 
-      final clientAuth = await googleUser.authorizationClient
-          .authorizeScopes(['email', 'profile']);
-
       final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
-        accessToken: clientAuth.accessToken,
       );
 
       final UserCredential result =

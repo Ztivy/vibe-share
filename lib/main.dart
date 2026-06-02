@@ -14,11 +14,12 @@ import 'package:vibe_share/screens/login_screen.dart';
 import 'package:vibe_share/screens/onboarding_screen.dart';
 import 'package:vibe_share/utils/strings_app.dart';
 import 'package:vibe_share/utils/theme_app.dart';
+import 'package:vibe_share/firebase/push_notification_service.dart';
 import 'package:vibe_share/firebase/stripe_service.dart';
 
 // ── Supabase — reemplaza con tus credenciales reales ─────────────────────────
-const _supabaseUrl = 'https://YOUR_PROJECT.supabase.co';
-const _supabaseAnonKey = 'YOUR_ANON_KEY';
+const _supabaseUrl = 'https://sccxcxdpabvasbuaybiw.supabase.co';
+const _supabaseAnonKey = 'sb_publishable_zNWGest9u5VIerf5V1DH9Q_IspXCpbT';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -32,6 +33,9 @@ Future<void> main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // Notificaciones push
+  await PushNotificationService.initialize();
 
   // Supabase
   await Supabase.initialize(

@@ -1,35 +1,41 @@
-import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
-import 'package:googleapis_auth/auth_io.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class NotificacionesPush {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  final GoogleSignIn _googleSignIn = GoogleSignIn(
+    scopes: [
+      'email',
+      'https://www.googleapis.com/auth/firebase.messaging',
+    ],
+  );
+
   final Dio _dio = Dio();
 
-  static const _projectId = 'vibeshare-ba9ce';
-  static const _serviceAccountAssetPath =
-      'assets/vibeshare-claveRol.json';
-  static const _fcmUrl =
+  static const String _projectId = 'vibeshare-ba9ce';
+
+  static const String _fcmUrl =
       'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send';
-  static const _scopes = [
-    'https://www.googleapis.com/auth/firebase.messaging',
-  ];
 
   Future<String?> _getAccessToken() async {
     try {
-      final jsonStr = await rootBundle.loadString(_serviceAccountAssetPath);
-      final json = jsonDecode(jsonStr) as Map<String, dynamic>;
+      GoogleSignInAccount? user = _googleSignIn.currentUser;
 
-      final accountCredentials = ServiceAccountCredentials.fromJson(json);
-      final client = await clientViaServiceAccount(accountCredentials, _scopes);
-      final token = client.credentials.accessToken.data;
-      client.close();
-      return token;
+      user ??= await _googleSignIn.signIn();
+
+      if (user == null) {
+        print('Usuario no autenticado');
+        return null;
+      }
+
+      final GoogleSignInAuthentication auth =
+          await user.authentication;
+
+      return auth.accessToken;
     } catch (e) {
-      debugPrint('_getAccessToken error: $e');
+      print('_getAccessToken error: $e');
       return null;
     }
   }
@@ -40,23 +46,41 @@ class NotificacionesPush {
     required String cancion,
   }) async {
     try {
-      final doc = await _firestore.collection('usuarios').doc(autorUid).get();
-      if (!doc.exists) return;
+      // Obtener documento del autor
+      final doc =
+          await _firestore.collection('usuarios').doc(autorUid).get();
 
-      final fcmToken = doc.data()?['fcmToken'] as String?;
-      if (fcmToken == null || fcmToken.isEmpty) return;
+      if (!doc.exists) {
+        print('Usuario destino no encontrado');
+        return;
+      }
 
+      final data = doc.data();
+
+      final String? fcmToken = data?['fcmToken'];
+
+      if (fcmToken == null || fcmToken.isEmpty) {
+        print('FCM token vacío');
+        return;
+      }
+
+      // Obtener access token
       final accessToken = await _getAccessToken();
-      if (accessToken == null) return;
 
-      await _dio.post(
+      if (accessToken == null) {
+        print('No se pudo obtener access token');
+        return;
+      }
+
+      final response = await _dio.post(
         _fcmUrl,
         data: {
           'message': {
             'token': fcmToken,
             'notification': {
               'title': '❤️ Nuevo like',
-              'body': '$remitenteNombre le dio like a tu canción "$cancion"',
+              'body':
+                  '$remitenteNombre le dio like a tu canción "$cancion"',
             },
             'android': {
               'priority': 'high',
@@ -78,10 +102,17 @@ class NotificacionesPush {
           },
         ),
       );
+
+      print('Notificación enviada');
+      print(response.data);
     } on DioException catch (e) {
-      debugPrint('notificarLike DioError: ${e.response?.statusCode} ${e.response?.data}');
+      print(
+        'notificarLike DioError: '
+        '${e.response?.statusCode} '
+        '${e.response?.data}',
+      );
     } catch (e) {
-      debugPrint('notificarLike error: $e');
+      print('notificarLike error: $e');
     }
   }
 }
